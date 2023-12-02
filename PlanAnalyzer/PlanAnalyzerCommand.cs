@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using Rhino;
 using Rhino.Commands;
@@ -54,9 +55,25 @@ namespace PlanAnalyzer
         {
             foreach (GridNode node in grid)
             {
-                doc.Objects.AddCurve(node.boundingCrv, new ObjectAttributes { ColorSource = ObjectColorSource.ColorFromObject, ObjectColor = System.Drawing.Color.Orange });
-                doc.Objects.AddText(node.intCounter.ToString(), new Plane(node.boundingCrv.GetBoundingBox(true).Center, Vector3d.XAxis, Vector3d.YAxis), 80, "Arial", true, false, TextJustification.MiddleCenter);
+                Brep brep = Brep.CreatePlanarBreps(node.boundingCrv, 0.1)[0];
+                Guid guid = doc.Objects.Add(brep);
+                RhinoObject obj = new ObjRef(guid).Object();
+                obj.Attributes.ColorSource = ObjectColorSource.ColorFromObject;
+                obj.Attributes.ObjectColor = getColor(node.intCounter);
+                obj.Attributes.DisplayOrder = 999;
+                obj.CommitChanges();
+                //doc.Objects.AddCurve(node.boundingCrv, new ObjectAttributes { ColorSource = ObjectColorSource.ColorFromObject, ObjectColor = System.Drawing.Color.Orange });
+                doc.Objects.AddText(node.intCounter.ToString(), new Plane(node.boundingCrv.GetBoundingBox(true).Center, Vector3d.XAxis, Vector3d.YAxis), 120, "Arial", true, false, TextJustification.MiddleCenter);
             }
+        }
+
+        private Color getColor(int intCounter)
+        {
+            if (intCounter <= 2) return Color.Blue;
+            else if (intCounter <= 5) return Color.Green;
+            else if (intCounter <= 8) return Color.Yellow;
+            else if (intCounter <= 11) return Color.Orange;
+            else return Color.Red;
         }
 
         private void processIntersections(ref List<GridNode> grid, List<Curve> nurseCrvs)
